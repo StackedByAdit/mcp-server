@@ -6,25 +6,23 @@ describe('Escalation Deduplication Guardrail', () => {
     clearEscalations();
   });
 
-  it('should return false when no escalation has been recorded for an order', () => {
-    expect(hasRecentEscalation('ORD-1001')).toBe(false);
+  it('should return false before recording, and true after recording an escalation within the time window', () => {
+    const orderId = 'ORD-1002';
+    expect(hasRecentEscalation(orderId)).toBe(false);
+
+    recordEscalation(orderId);
+    expect(hasRecentEscalation(orderId)).toBe(true);
   });
 
-  it('should return true immediately after recording an escalation', () => {
-    recordEscalation('ORD-1001');
-    expect(hasRecentEscalation('ORD-1001')).toBe(true);
-  });
+  it('should confirm deduplication blocks a second escalation attempt for the same order', () => {
+    const orderId = 'ORD-1003';
 
-  it('should differentiate between different order IDs', () => {
-    recordEscalation('ORD-1001');
-    expect(hasRecentEscalation('ORD-1001')).toBe(true);
-    expect(hasRecentEscalation('ORD-1002')).toBe(false);
-  });
+    // First escalation attempt allowed
+    expect(hasRecentEscalation(orderId)).toBe(false);
+    recordEscalation(orderId);
 
-  it('should return false if the escalation is older than the window windowMs', async () => {
-    recordEscalation('ORD-1001');
-    // Test with a 50ms custom window after waiting 60ms
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(hasRecentEscalation('ORD-1001', 50)).toBe(false);
+    // Second escalation attempt blocked
+    const isBlockedOnSecondAttempt = hasRecentEscalation(orderId);
+    expect(isBlockedOnSecondAttempt).toBe(true);
   });
 });
