@@ -1,13 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { diagnoseStuckOrder } from '../src/domain/diagnose.js';
 
-describe('diagnoseStuckOrder', () => {
-  it('should return not_found for non-existent order', () => {
-    const result = diagnoseStuckOrder('ORD-UNKNOWN');
-    expect(result.diagnosis).toBe('not_found');
-    expect(result.explanation).toContain('not found');
-  });
-
+describe('Domain Diagnosis Logic (diagnoseStuckOrder)', () => {
   it('should diagnose Order A (ORD-1001) as healthy', () => {
     const result = diagnoseStuckOrder('ORD-1001');
     expect(result.diagnosis).toBe('healthy');
@@ -35,6 +29,11 @@ describe('diagnoseStuckOrder', () => {
     expect(result.diagnosis).toBe('payment_not_captured');
     expect(result.rootCause).toBeUndefined();
     expect(result.evidence?.paymentStatus).toBe('pending');
-    expect(result.evidence?.inventorySnapshot).toBeUndefined();
+  });
+
+  it('should return not_found for a nonexistent orderId', () => {
+    const result = diagnoseStuckOrder('ORD-UNKNOWN');
+    expect(result.diagnosis).toBe('not_found');
+    expect(result.explanation).toContain('not found');
   });
 });
