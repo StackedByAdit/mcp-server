@@ -24,17 +24,29 @@ registerCreateEscalationTool(mcpServer);
 
 export const app = express();
 
+app.use(express.json());
+
+// Basic health check endpoint
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Active SSE transports mapped by sessionId
 const transports = new Map<string, SSEServerTransport>();
 
-app.get('/sse', async (req, res) => {
+// Streamable HTTP / SSE endpoint
+app.get('/mcp', async (req, res) => {
   const transport = new SSEServerTransport('/messages', res);
   transports.set(transport.sessionId, transport);
+
   req.on('close', () => {
     transports.delete(transport.sessionId);
   });
+
   await mcpServer.connect(transport);
 });
 
+// Message endpoint for SSE client communication
 app.post('/messages', async (req, res) => {
   const sessionId = req.query.sessionId as string;
   const transport = transports.get(sessionId);
@@ -44,10 +56,3 @@ app.post('/messages', async (req, res) => {
     res.status(400).send('Session not found');
   }
 });
-
-if (process.env.NODE_ENV !== 'test') {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`MCP server listening on port ${PORT}`);
-  });
-}

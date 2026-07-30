@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "Remotely hosted MCP server for e-commerce order investigation",
   "type": "module",
-  "main": "dist/mcp/server.js",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/mcp/server.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/mcp/server.js",
+    "start": "node dist/index.js",
     "test": "vitest run"
   },
   "dependencies": {
