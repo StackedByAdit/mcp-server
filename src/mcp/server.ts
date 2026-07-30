@@ -2,10 +2,25 @@ import express from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 
+import { registerGetOrderTool } from './tools/getOrder.js';
+import { registerGetPaymentStatusTool } from './tools/getPaymentStatus.js';
+import { registerGetInventoryForSkuTool } from './tools/getInventoryForSku.js';
+import { registerGetShipmentStatusTool } from './tools/getShipmentStatus.js';
+import { registerDiagnoseStuckOrderTool } from './tools/diagnoseStuckOrder.js';
+import { registerCreateEscalationTool } from './tools/createEscalation.js';
+
 export const mcpServer = new McpServer({
   name: 'order-investigation-mcp',
   version: '1.0.0'
 });
+
+// Register all 6 tools
+registerGetOrderTool(mcpServer);
+registerGetPaymentStatusTool(mcpServer);
+registerGetInventoryForSkuTool(mcpServer);
+registerGetShipmentStatusTool(mcpServer);
+registerDiagnoseStuckOrderTool(mcpServer);
+registerCreateEscalationTool(mcpServer);
 
 export const app = express();
 
