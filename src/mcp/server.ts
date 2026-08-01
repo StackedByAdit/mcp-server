@@ -61,6 +61,11 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Explicit JSON 404 for OAuth discovery routes to signal to clients (like Claude Desktop) that auth is not supported
+app.get(['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource', '/.well-known/*'], (_req, res) => {
+  res.status(404).json({ error: 'oauth_not_supported', message: 'This MCP server is unauthenticated and does not support OAuth.' });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
