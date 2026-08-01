@@ -9,7 +9,6 @@ CREATE TABLE escalations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Invariant: only one OPEN escalation per order at a time (idempotency at the DB level)
 CREATE UNIQUE INDEX idx_one_open_escalation_per_order
   ON escalations (order_id)
   WHERE status = 'open';

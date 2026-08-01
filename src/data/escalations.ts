@@ -40,7 +40,6 @@ export async function createEscalation(
       escalation: res.rows[0]
     };
   } catch (error: any) {
-    // Postgres error code 23505 is unique_violation
     if (error?.code === '23505') {
       const selectQuery = `
         SELECT id, order_id, diagnosis, root_cause, evidence, recommended_action, status, created_at

@@ -3,15 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import { createEscalation } from '../src/data/escalations.js';
 import { pool } from '../src/data/db.js';
 
-/**
- * Integration test suite for Postgres-backed Escalations.
- * 
- * Note on Database Connection:
- * These tests execute against the real PostgreSQL database configured in `process.env.DATABASE_URL`
- * (e.g. Neon PostgreSQL). Using the actual database validates real SQL execution, 
- * native PostgreSQL error handling (code 23505 for unique index violations), 
- * and database-level idempotency without relying on mock layers.
- */
 describe('Postgres Escalation Storage & Idempotency', () => {
   const testOrderId = 'TEST-ORD-9999';
 
@@ -48,7 +39,6 @@ describe('Postgres Escalation Storage & Idempotency', () => {
   });
 
   it('Test 2: should return status "already_escalated" on duplicate open escalation and not create a second row', async () => {
-    // 1st Escalation attempt -> created
     const firstResult = await createEscalation(
       testOrderId,
       'fulfillment_stalled',
@@ -58,7 +48,6 @@ describe('Postgres Escalation Storage & Idempotency', () => {
     );
     expect(firstResult.status).toBe('created');
 
-    // 2nd Escalation attempt for same order -> already_escalated
     const secondResult = await createEscalation(
       testOrderId,
       'fulfillment_stalled',
@@ -70,7 +59,6 @@ describe('Postgres Escalation Storage & Idempotency', () => {
     expect(secondResult.status).toBe('already_escalated');
     expect(secondResult.escalation.id).toBe(firstResult.escalation.id);
 
-    // Verify row count in database for testOrderId is strictly 1
     const countRes = await pool.query(
       'SELECT COUNT(*)::int as count FROM escalations WHERE order_id = $1 AND status = $2',
       [testOrderId, 'open']
