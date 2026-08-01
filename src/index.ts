@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { app } from './mcp/server.js';
 
 const PORT = process.env.PORT || 3000;
