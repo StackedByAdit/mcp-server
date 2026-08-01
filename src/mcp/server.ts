@@ -1,6 +1,8 @@
 import express from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { toJsonSchemaCompat } from '@modelcontextprotocol/sdk/server/zod-json-schema-compat.js';
 
 import { registerGetOrderTool } from './tools/getOrder.js';
 import { registerGetPaymentStatusTool } from './tools/getPaymentStatus.js';
@@ -21,6 +23,23 @@ export function createMcpServer(): McpServer {
   registerGetShipmentStatusTool(server);
   registerDiagnoseStuckOrderTool(server);
   registerCreateEscalationTool(server);
+
+  server.server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const rawTools = Object.entries((server as any)._registeredTools)
+      .filter(([, tool]: any) => tool.enabled)
+      .map(([name, tool]: [string, any]) => {
+        const obj = tool.inputSchema;
+        const inputSchema = obj
+          ? toJsonSchemaCompat(obj, { strictUnions: true, pipeStrategy: 'input' })
+          : { type: 'object' };
+        return {
+          name,
+          description: tool.description,
+          inputSchema
+        };
+      });
+    return { tools: rawTools };
+  });
 
   return server;
 }
@@ -57,11 +76,12 @@ app.get('/mcp', async (req, res) => {
   const transport = new SSEServerTransport('/messages', res);
   const server = createMcpServer();
 
-  sessions.set(transport.sessionId, { transport, server });
+  const sessionId = transport.sessionId;
+  sessions.set(sessionId, { transport, server });
 
-  req.on('close', () => {
-    sessions.delete(transport.sessionId);
-  });
+  transport.onclose = () => {
+    sessions.delete(sessionId);
+  };
 
   await server.connect(transport);
 });
