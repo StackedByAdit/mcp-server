@@ -15,7 +15,7 @@ An AI-native operations tool that enables e-commerce support and ops teams to in
 3. `getInventoryForSku`: Checks available vs. reserved stock levels to identify backorders.
 4. `getShipmentStatus`: Checks whether a shipment record and tracking number exist.
 5. `diagnoseStuckOrder`: Evaluates payment, fulfillment, and inventory in priority order to return a single root-cause diagnosis.
-6. `createEscalation`: Logs a human-review escalation with evidence and deduplicates repeated requests within a 10-minute window.
+6. `createEscalation`: Logs a human-review escalation with evidence and prevents duplicate open escalations per order via database unique constraint.
 
 ## Synthetic Mock Order Scenarios
 - **Order A (`ORD-1001`) — Healthy Control**: Payment captured, fulfillment triggered, shipment created.
@@ -35,8 +35,19 @@ npm run dev
 npm test
 ```
 
+## Database Setup & Migrations
+Escalations are persisted in PostgreSQL for durability and idempotency across server restarts.
+
+1. Set the `DATABASE_URL` environment variable pointing to your PostgreSQL instance:
+   ```bash
+   export DATABASE_URL="postgresql://user:password@localhost:5432/mcp_db"
+   ```
+2. Manually execute the migration SQL script against your target database once:
+   ```bash
+   psql $DATABASE_URL -f src/data/migrations/001_create_escalations.sql
+   ```
+
 ## Explicit Exclusions / Out of Scope
 - **Authentication & User Management**: No API keys or OAuth required (uses synthetic, non-credential data).
-- **Persistent Database**: Uses in-memory TypeScript data structures with zero database infrastructure overhead.
 - **Automated Remediation**: No automated writes or mutation tools exist on commerce backends.
 - **Frontend UI**: No custom graphical dashboard (designed specifically for AI clients/consumers via MCP).
