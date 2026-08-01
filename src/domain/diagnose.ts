@@ -22,7 +22,6 @@ export interface DiagnosisResult {
 }
 
 export function diagnoseStuckOrder(orderId: string): DiagnosisResult {
-  // Step 1: Fetch order
   const order = getOrderById(orderId);
   if (!order) {
     return {
@@ -32,7 +31,6 @@ export function diagnoseStuckOrder(orderId: string): DiagnosisResult {
     };
   }
 
-  // Step 2: Check payment status first
   if (order.paymentStatus !== 'captured') {
     return {
       orderId,
@@ -45,7 +43,6 @@ export function diagnoseStuckOrder(orderId: string): DiagnosisResult {
     };
   }
 
-  // Step 3: Check fulfillment status when payment is captured
   if (order.fulfillmentTriggeredAt !== null) {
     return {
       orderId,
@@ -59,7 +56,6 @@ export function diagnoseStuckOrder(orderId: string): DiagnosisResult {
     };
   }
 
-  // Step 4: Core stuck case (payment captured, fulfillment not triggered) -> check inventory factor
   const inventory = getInventoryBySku(order.sku);
   const isBackordered = inventory ? inventory.reservedQty > inventory.availableQty : false;
 
