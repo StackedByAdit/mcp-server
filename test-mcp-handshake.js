@@ -46,7 +46,6 @@ function runTest() {
             const parsed = JSON.parse(dataPayload);
             handleSseMessage(parsed);
           } catch (_) {
-            // Partial JSON
           }
         }
       }
