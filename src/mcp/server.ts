@@ -1,8 +1,6 @@
 import express from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { toJsonSchemaCompat } from '@modelcontextprotocol/sdk/server/zod-json-schema-compat.js';
 
 import { registerGetOrderTool } from './tools/getOrder.js';
 import { registerGetPaymentStatusTool } from './tools/getPaymentStatus.js';
@@ -24,32 +22,32 @@ export function createMcpServer(): McpServer {
   registerDiagnoseStuckOrderTool(server);
   registerCreateEscalationTool(server);
 
-  server.server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const rawTools = Object.entries((server as any)._registeredTools)
-      .filter(([, tool]: any) => tool.enabled)
-      .map(([name, tool]: [string, any]) => {
-        const obj = tool.inputSchema;
-        const inputSchema = obj
-          ? toJsonSchemaCompat(obj, { strictUnions: true, pipeStrategy: 'input' })
-          : { type: 'object' };
-        return {
-          name,
-          description: tool.description,
-          inputSchema
-        };
-      });
-    return { tools: rawTools };
-  });
-
   return server;
 }
 
-export const mcpServer = createMcpServer();
+let _mcpServerInstance: McpServer | undefined;
+export const mcpServer = new Proxy({} as McpServer, {
+  get(_target, prop) {
+    if (!_mcpServerInstance) _mcpServerInstance = createMcpServer();
+    return (_mcpServerInstance as any)[prop];
+  }
+});
 
 export const app = express();
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : null;
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin ?? '';
+  const originHeader =
+    allowedOrigins === null
+      ? '*'
+      : allowedOrigins.includes(origin)
+      ? origin
+      : allowedOrigins[0];
+  res.header('Access-Control-Allow-Origin', originHeader);
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-mcp-session-id');
   if (req.method === 'OPTIONS') {
@@ -68,16 +66,27 @@ app.get('/health', (_req, res) => {
 interface Session {
   transport: SSEServerTransport;
   server: McpServer;
+  createdAt: number;
 }
 
 const sessions = new Map<string, Session>();
+
+const SESSION_TTL_MS = 30 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (now - session.createdAt > SESSION_TTL_MS) {
+      sessions.delete(id);
+    }
+  }
+}, SESSION_TTL_MS).unref();
 
 app.get('/mcp', async (req, res) => {
   const transport = new SSEServerTransport('/messages', res);
   const server = createMcpServer();
 
   const sessionId = transport.sessionId;
-  sessions.set(sessionId, { transport, server });
+  sessions.set(sessionId, { transport, server, createdAt: Date.now() });
 
   transport.onclose = () => {
     sessions.delete(sessionId);

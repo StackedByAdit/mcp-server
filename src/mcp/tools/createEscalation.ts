@@ -10,15 +10,27 @@ export function registerCreateEscalationTool(server: McpServer): void {
     {
       orderId: z.string().describe('The ID of the stuck order to escalate.'),
       evidence: z.record(z.unknown()).describe('Supporting evidence object explaining the issue.'),
-      recommendedAction: z.string().describe('The recommended action for human review.')
+      recommendedAction: z.string().describe('The recommended action for human review.'),
+      diagnosis: z.string().optional().describe('Diagnosis from a prior diagnoseStuckOrder call. Recommended to supply.'),
+      rootCause: z.string().optional().describe('Root cause from a prior diagnoseStuckOrder call, if any.')
     },
-    async ({ orderId, evidence, recommendedAction }) => {
-      const diag = diagnoseStuckOrder(orderId);
+    async ({ orderId, evidence, recommendedAction, diagnosis: callerDiagnosis, rootCause: callerRootCause }) => {
+      let diagnosisValue: string;
+      let rootCauseValue: string | undefined | null;
+
+      if (callerDiagnosis !== undefined) {
+        diagnosisValue = callerDiagnosis;
+        rootCauseValue = callerRootCause ?? null;
+      } else {
+        const diag = diagnoseStuckOrder(orderId);
+        diagnosisValue = diag.diagnosis;
+        rootCauseValue = diag.rootCause;
+      }
 
       const result = await createEscalation(
         orderId,
-        diag.diagnosis,
-        diag.rootCause,
+        diagnosisValue,
+        rootCauseValue,
         evidence,
         recommendedAction
       );
