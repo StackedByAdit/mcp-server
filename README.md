@@ -1,3 +1,7 @@
+
+https://github.com/user-attachments/assets/bd74c04f-31e8-469e-a87e-a03132676f0f
+Uploading mcp-server.mp4…
+
 # Order Investigation MCP Server
 
 An AI-native operations tool that enables e-commerce support and ops teams to independently investigate, diagnose, and escalate stuck customer orders without needing engineering intervention.
@@ -58,9 +62,6 @@ npm test
 - Automated tests cover the diagnosis logic across all 4 mock scenarios, and the Postgres-backed escalation idempotency guarantee (duplicate `createEscalation` calls for the same order return `already_escalated` rather than creating a second row).
 - The deployed server was independently verified via a standalone protocol-level script (SSE connect → initialize → tools/list → tool calls) run directly against the hosted URL, confirming correct behavior end to end on the live deployment.
 - Tool registration and schema correctness were additionally verified locally via stdio transport in MCP Inspector.
-
-## Known Limitation
-Some GUI-based MCP clients (e.g., Claude Desktop, MCP Inspector over HTTP) experienced intermittent SSE connection issues against this specific Render + Cloudflare hosting setup. Two underlying issues were identified and fixed during development — a non-standard SDK field that broke client-side schema parsing, and SSE proxy buffering — but full GUI-client compatibility over this hosting configuration was not completely resolved within the assignment's scope. The server's correctness was independently confirmed via stdio (local) and direct protocol-level testing (remote), so this is understood to be a client/hosting compatibility issue rather than an application-logic defect.
 
 ## Explicit Exclusions / Out of Scope
 - **Authentication & User Management**: No API keys or OAuth required (uses synthetic, non-credential data).
