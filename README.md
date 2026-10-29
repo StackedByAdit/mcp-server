@@ -1,7 +1,3 @@
-
-https://github.com/user-attachments/assets/bd74c04f-31e8-469e-a87e-a03132676f0f
-Uploading mcp-server.mp4…
-
 # Order Investigation MCP Server
 
 An AI-native operations tool that enables e-commerce support and ops teams to independently investigate, diagnose, and escalate stuck customer orders without needing engineering intervention.
